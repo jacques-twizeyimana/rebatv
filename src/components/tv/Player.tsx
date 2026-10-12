@@ -6,6 +6,7 @@ import Link from "next/link";
 import { zapTarget } from "@/lib/lineup";
 import { hueVars, marketPath, SITE_NAME, watchPath } from "@/lib/site";
 import type { LineupChannel } from "@/lib/types";
+import { ChannelLogo } from "./ChannelLogo";
 import { Clock } from "./Clock";
 import { LiveBadge } from "./LiveBadge";
 import { focusEl } from "./SpatialNav";
@@ -265,12 +266,7 @@ export function Player({ channels, initialSlug, market }: Props) {
 
         <div className={s.bottom}>
           <div className={s.mark} aria-hidden="true">
-            {cur.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={cur.logoUrl} alt="" width={120} height={120} decoding="async" referrerPolicy="no-referrer" />
-            ) : (
-              cur.short
-            )}
+            {cur.logoUrl ? <ChannelLogo key={cur.logoUrl} src={cur.logoUrl} sizes="12em" eager className={s.markTile} /> : cur.short}
           </div>
           <div className={s.info}>
             <div className={s.infoMeta}>

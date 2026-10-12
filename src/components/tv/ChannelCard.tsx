@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { hueVars, watchPath } from "@/lib/site";
 import type { LineupChannel } from "@/lib/types";
+import { ChannelLogo } from "./ChannelLogo";
 import s from "./tv.module.css";
 
 type Props = {
@@ -20,9 +21,7 @@ export function ChannelCard({ channel: c, market, focusKey, showLive = true, hea
         <div className={s.scanlines} />
         {c.logoUrl ? (
           <div className={s.thumbLogo}>
-            {/* External, admin-provided logo URLs: plain <img> so arbitrary hosts work without an optimizer allowlist. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={c.logoUrl} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+            <ChannelLogo src={c.logoUrl} sizes="(max-width: 760px) 30vw, 12vw" />
           </div>
         ) : (
           <div className={s.badge}>{c.short}</div>

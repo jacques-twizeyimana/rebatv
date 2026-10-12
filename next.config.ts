@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LOGO_HOSTS } from "./src/lib/logo";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -21,6 +22,16 @@ const nextConfig: NextConfig = {
     catalog: { stale: 60 * 60, revalidate: 60 * 60 * 24 * 7, expire: 60 * 60 * 24 * 30 },
   },
   serverExternalPackages: ["@node-rs/argon2"],
+  images: {
+    // Channel logos are hotlinked from their hosts and optimized here (see src/lib/logo.ts).
+    remotePatterns: LOGO_HOSTS.map((hostname) => ({ protocol: "https" as const, hostname })),
+    formats: ["image/webp"],
+    qualities: [75],
+    deviceSizes: [640, 828, 1080, 1280, 1920, 2560, 3840],
+    imageSizes: [64, 96, 128, 192, 256, 384],
+    // Logos rarely change; keep optimized copies for 30 days.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -122,7 +122,7 @@ export function ChannelForm({ initial, countries, genres }: Props) {
           <Field id="streamUrl" label="HLS stream URL" help="https:// link to the .m3u8 playlist. Leave empty to show the channel as off air." error={e.streamUrl}>
             {(p) => <input {...p} name="streamUrl" type="url" inputMode="url" className={a.input} defaultValue={v.streamUrl} placeholder="https://…/index.m3u8" />}
           </Field>
-          <Field id="logoUrl" label="Logo URL" help="Optional https:// image (PNG/SVG with transparency works best). Without one, cards use the colour and short code." error={e.logoUrl}>
+          <Field id="logoUrl" label="Logo URL" help="Optional https:// image, shown on a white tile (PNG or SVG with a transparent background works best). Without one, cards use the colour and short code." error={e.logoUrl}>
             {(p) => <input {...p} name="logoUrl" type="url" inputMode="url" className={a.input} value={logo} onChange={(ev) => setLogo(ev.target.value)} placeholder="https://…/logo.svg" />}
           </Field>
           <div className={a.grid2}>
@@ -137,8 +137,13 @@ export function ChannelForm({ initial, countries, genres }: Props) {
                 <div className={tv.scanlines} />
                 {logo.startsWith("https://") ? (
                   <div className={tv.thumbLogo}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={logo} alt="" referrerPolicy="no-referrer" />
+                    <span className={tv.logoTile}>
+                      <span className={tv.logoBox}>
+                        {/* Plain <img>: previews any URL while typing, before it's saved. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={logo} alt="" referrerPolicy="no-referrer" className={tv.logoImg} />
+                      </span>
+                    </span>
                   </div>
                 ) : (
                   <span className={a.previewLabel}>{short || "TV"}</span>
