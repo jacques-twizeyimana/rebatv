@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "reba-tv (prod)", "runtimeExecutable": "pnpm", "runtimeArgs": ["start"], "port": 3000 },
+    { "name": "reba-tv (dev)", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 3000 }
+  ]
+}

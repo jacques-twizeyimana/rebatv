@@ -1,0 +1,21 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: rebatv
+      MARIADB_USER: rebatv
+      MARIADB_PASSWORD: rebatv
+      MARIADB_ROOT_PASSWORD: rebatv-root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mariadb-data:
