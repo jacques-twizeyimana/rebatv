@@ -1,0 +1,692 @@
+/* ───── Shell ───────────────────────────────────────────────────────────────
+   The design scaled everything from one JS-computed root size (viewport/120, clamped 9–20px).
+   Here that is pure CSS; the rem term keeps browser zoom working (WCAG 1.4.4). */
+.tv {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: var(--font-body);
+  font-size: clamp(10px, calc(0.134rem + 0.722vw), 24px);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* True 4K CSS viewports (rare; most TVs report 1920 CSS px at DPR 2) keep scaling. */
+@media (min-width: 3000px) {
+  .tv {
+    font-size: calc(0.134rem + 0.722vw);
+  }
+}
+
+@media (max-width: 760px) {
+  .tv {
+    font-size: 13px;
+  }
+}
+
+.gutter {
+  padding-left: 4em;
+  padding-right: 4em;
+}
+
+/* Shared pill/button focus treatment from the design (outline 0.18em, offset 0.15em). */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 2.75rem;
+  padding: 0.7em 1.4em;
+  border: 0;
+  border-radius: 2em;
+  background: transparent;
+  color: var(--fg-soft);
+  font-weight: 600;
+  font-size: 1.1em;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  outline: 0.18em solid transparent;
+  outline-offset: 0.15em;
+  transition: background-color 0.15s, color 0.15s, outline-color 0.15s, transform 0.15s;
+}
+
+.pill:hover {
+  color: var(--fg);
+  background: var(--surface);
+}
+
+.pill:focus {
+  outline-color: var(--acc);
+}
+
+.pill:focus:not(:focus-visible) {
+  outline-color: transparent;
+}
+
+.pillActive,
+.pillActive:hover {
+  background: var(--fg);
+  color: var(--ink);
+}
+
+/* ───── Header ─────────────────────────────────────────────────────────── */
+.header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2.4em;
+  padding: 2em 4em;
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.1em;
+  letter-spacing: -0.04em;
+  color: var(--fg);
+  text-decoration: none;
+  border-radius: 0.3em;
+}
+
+.logo:hover {
+  color: var(--fg);
+}
+
+.logoAccent {
+  color: var(--acc);
+}
+
+.nav {
+  display: flex;
+  gap: 0.6em;
+}
+
+.searchGlyph {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  border: 0.16em solid currentColor;
+  border-radius: 50%;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.locButton {
+  composes: pill;
+  gap: 0.7em;
+  padding: 0.6em 1.2em 0.6em 0.9em;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.locButton:hover,
+.locButton:focus {
+  background: var(--surface-hover);
+}
+
+.pin {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--acc);
+}
+
+.locName {
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.locChange {
+  color: var(--muted);
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+.clock {
+  min-width: 3.2em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.5em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-soft);
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 1em;
+    padding: 1.2em 1.2em;
+  }
+  .clock {
+    display: none;
+  }
+  .gutter {
+    padding-left: 1.2em;
+    padding-right: 1.2em;
+  }
+}
+
+/* ───── Hero ───────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  min-height: 30em;
+  margin: 0 4em;
+  border-radius: 1.6em;
+  overflow: hidden;
+  background: var(--bg-raised);
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.heroWash {
+  composes: fill;
+  opacity: 0.55;
+}
+
+.heroFade {
+  composes: fill;
+  background: linear-gradient(90deg, #0e0f0d 15%, rgba(14, 15, 13, 0.6) 50%, rgba(14, 15, 13, 0) 85%);
+}
+
+.heroCopy {
+  position: relative;
+  flex: 1 1 30em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.3em;
+  padding: 3.6em 3.4em;
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.heroMetaText {
+  color: var(--muted);
+}
+
+.heroTitle {
+  max-width: 11em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 4.6em;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.heroDesc {
+  max-width: 28em;
+  font-size: 1.3em;
+  line-height: 1.45;
+  color: var(--fg-soft);
+  text-wrap: pretty;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  margin-top: 0.6em;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  min-height: 2.75rem;
+  padding: 0.95em 1.9em;
+  border: 0;
+  border-radius: 0.8em;
+  background: var(--acc);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1.25em;
+  text-decoration: none;
+  cursor: pointer;
+  outline: 0.2em solid transparent;
+  outline-offset: 0.2em;
+  transition: transform 0.15s, outline-color 0.15s, background-color 0.15s;
+}
+
+.cta:hover {
+  color: var(--ink);
+}
+
+.cta:focus {
+  outline-color: var(--fg);
+  transform: scale(1.05);
+}
+
+.cta:focus:not(:focus-visible) {
+  outline-color: transparent;
+  transform: none;
+}
+
+.ctaGhost {
+  composes: cta;
+  background: rgba(243, 241, 234, 0.12);
+  color: var(--fg);
+  font-weight: 600;
+  padding: 0.95em 1.7em;
+}
+
+.ctaGhost:hover {
+  color: var(--fg);
+  background: rgba(243, 241, 234, 0.18);
+}
+
+.ctaGhost:focus {
+  outline-color: var(--acc);
+  background: rgba(243, 241, 234, 0.22);
+}
+
+.playGlyph {
+  width: 0;
+  height: 0;
+  border-left: 0.75em solid currentColor;
+  border-top: 0.45em solid transparent;
+  border-bottom: 0.45em solid transparent;
+}
+
+.heroMedia {
+  position: relative;
+  flex: 0 1 40em;
+  display: flex;
+  align-items: center;
+  padding: 3em 3em 3em 0;
+}
+
+.heroScreen {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: 1em;
+  overflow: hidden;
+  box-shadow: 0 2em 4em rgba(0, 0, 0, 0.5);
+}
+
+.heroScreenMark {
+  composes: fill;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 5em;
+  color: rgba(255, 255, 255, 0.12);
+  letter-spacing: -0.04em;
+}
+
+.heroScreenNote {
+  position: absolute;
+  right: 1.2em;
+  bottom: 1em;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 760px) {
+  .hero {
+    margin: 0 1.2em;
+    min-height: 0;
+  }
+  .heroCopy {
+    padding: 2em 1.6em;
+  }
+  .heroTitle {
+    font-size: 3em;
+  }
+  .heroMedia {
+    display: none;
+  }
+}
+
+/* ───── Gradient "screens" (design: per-channel hue) ─────────────────────── */
+.gradient {
+  background: radial-gradient(120% 90% at 18% 12%, hsl(var(--h), 72%, 46%) 0%, transparent 55%),
+    radial-gradient(90% 80% at 88% 92%, hsl(var(--h2), 60%, 32%) 0%, transparent 60%),
+    linear-gradient(160deg, hsl(var(--h), 42%, 20%), hsl(var(--h3), 38%, 8%));
+}
+
+.scanlines {
+  composes: fill;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 4px);
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.3em 0.7em;
+  border-radius: 0.4em;
+  background: var(--live);
+  color: #fff;
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.liveDot {
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* ───── Rows & cards ───────────────────────────────────────────────────── */
+.row {
+  margin-top: 2.6em;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 22em;
+}
+
+.rowHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1em;
+}
+
+.rowTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2em;
+  letter-spacing: -0.02em;
+}
+
+.rowSub {
+  color: var(--muted);
+  font-size: 1.1em;
+}
+
+.seeAll {
+  composes: pill;
+  padding: 0.55em 1.2em;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 1.05em;
+}
+
+.seeAll:hover,
+.seeAll:focus {
+  background: var(--surface-hover);
+}
+
+.rowGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1.5em;
+  margin: 0;
+  padding-top: 1.2em;
+  padding-bottom: 1.4em;
+  list-style: none;
+}
+
+@media (max-width: 760px) {
+  .rowGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1em;
+  }
+}
+
+.card {
+  display: block;
+  min-width: 0;
+  border-radius: 1em;
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+  outline: 0.22em solid transparent;
+  outline-offset: 0.35em;
+  transition: transform 0.18s, outline-color 0.18s;
+}
+
+.card:hover {
+  color: var(--fg);
+  outline-color: rgba(243, 241, 234, 0.35);
+}
+
+.card:focus {
+  outline-color: var(--acc);
+  transform: scale(1.04);
+}
+
+.card:focus:not(:focus-visible) {
+  outline-color: transparent;
+  transform: none;
+}
+
+.thumb {
+  position: relative;
+  padding-top: 56.25%;
+  border-radius: 1em;
+  overflow: hidden;
+}
+
+.thumbLogo {
+  composes: fill;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18% 22%;
+}
+
+.thumbLogo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.badge {
+  position: absolute;
+  left: 0.9em;
+  top: 0.9em;
+  padding: 0.35em 0.6em;
+  border-radius: 0.4em;
+  background: rgba(14, 15, 13, 0.82);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15em;
+  letter-spacing: -0.02em;
+}
+
+.cardLive {
+  position: absolute;
+  right: 0.9em;
+  top: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.25em 0.55em;
+  border-radius: 0.35em;
+  background: var(--live);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+}
+
+.cardLive .liveDot {
+  width: 0.45em;
+  height: 0.45em;
+}
+
+.chNum {
+  position: absolute;
+  right: 0.9em;
+  bottom: 0.8em;
+  font-weight: 700;
+  font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  padding: 0.85em 0.2em 0;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: 1.15em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardTag {
+  color: var(--muted);
+  font-size: 0.95em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ───── Footer ─────────────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2.2em;
+  padding: 2.4em 4em 3.4em;
+  color: var(--muted);
+  font-size: 1.05em;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.key {
+  padding: 0.1em 0.5em;
+  border: 0.1em solid #55574f;
+  border-radius: 0.35em;
+  color: var(--fg-soft);
+}
+
+@media (max-width: 760px) {
+  .footer {
+    padding: 2em 1.2em 3em;
+  }
+  .hint {
+    display: none;
+  }
+}
+
+/* ───── Location dialog ────────────────────────────────────────────────── */
+.dialog {
+  width: calc(100% - 4em);
+  max-width: 36em;
+  padding: 2.4em;
+  border: 0;
+  border-radius: 1.4em;
+  background: #181a17;
+  color: var(--fg);
+  box-shadow: 0 2em 5em rgba(0, 0, 0, 0.6);
+  font-size: inherit;
+}
+
+.dialog::backdrop {
+  background: rgba(8, 9, 7, 0.82);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+}
+
+.dialogTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2em;
+  letter-spacing: -0.02em;
+}
+
+.dialogText {
+  margin-top: 0.4em;
+  color: var(--muted);
+  font-size: 1.1em;
+  line-height: 1.45;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  width: 100%;
+  padding: 1em 1.2em;
+  border: 0;
+  border-radius: 0.8em;
+  background: var(--surface-strong);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  outline: 0.18em solid transparent;
+  transition: background-color 0.12s, outline-color 0.12s;
+}
+
+.option:hover,
+.option:focus {
+  background: var(--border);
+}
+
+.option:focus {
+  outline-color: var(--acc);
+}
+
+.option:focus:not(:focus-visible) {
+  outline-color: transparent;
+}
+
+.optionName {
+  font-weight: 700;
+  font-size: 1.2em;
+}
+
+.optionCount {
+  color: var(--muted);
+}
+
+.optionMark {
+  margin-left: auto;
+  color: var(--acc);
+  font-weight: 600;
+}

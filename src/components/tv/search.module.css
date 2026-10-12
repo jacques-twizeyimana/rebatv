@@ -1,0 +1,256 @@
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 3.4em;
+  padding: 1em 4em 4em;
+}
+
+.panel {
+  flex: 0 1 34em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6em;
+}
+
+.queryBox {
+  display: flex;
+  align-items: center;
+  min-height: 4em;
+  padding: 0.9em 1.2em;
+  border: 0.12em solid var(--border);
+  border-radius: 0.9em;
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+
+.queryBox:focus-within {
+  border-color: var(--acc);
+}
+
+.queryInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2em;
+  letter-spacing: -0.02em;
+  caret-color: var(--acc);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.queryInput:focus {
+  outline: none;
+}
+
+.queryInput::placeholder {
+  color: var(--hint);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.7em;
+  letter-spacing: 0;
+}
+
+.queryInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.55em;
+}
+
+.key {
+  position: relative;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.6em;
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 1.4em;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: 0.15em solid transparent;
+  transition: background-color 0.12s, color 0.12s, transform 0.12s;
+}
+
+/* Square-ish keys without aspect-ratio (unsupported on older TV engines). */
+.key::before {
+  content: "";
+  display: block;
+  padding-top: 80%;
+}
+
+.keyLabel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.key:hover {
+  background: var(--surface-hover);
+}
+
+.key:focus,
+.action:focus {
+  background: var(--acc);
+  color: var(--ink);
+  transform: scale(1.08);
+  outline-color: transparent;
+}
+
+.key:focus:not(:focus-visible),
+.action:focus:not(:focus-visible) {
+  background: var(--surface);
+  color: var(--fg);
+  transform: none;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 3fr 2fr 2fr;
+  gap: 0.55em;
+}
+
+.action {
+  min-height: 2.75rem;
+  padding: 0.9em;
+  border: 0;
+  border-radius: 0.6em;
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 1.15em;
+  cursor: pointer;
+  outline: 0.15em solid transparent;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.action:hover {
+  background: var(--surface-hover);
+}
+
+.action:focus {
+  transform: none;
+}
+
+.browse {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+
+.browseLabel {
+  color: var(--muted);
+  font-size: 1.05em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+}
+
+.chip {
+  min-height: 2.75rem;
+  padding: 0.6em 1.15em;
+  border: 0;
+  border-radius: 2em;
+  background: var(--surface);
+  color: var(--fg-soft);
+  font-weight: 600;
+  font-size: 1.05em;
+  cursor: pointer;
+  outline: 0.16em solid transparent;
+  outline-offset: 0.12em;
+  transition: background-color 0.12s, outline-color 0.12s;
+}
+
+.chip:hover {
+  background: var(--surface-hover);
+}
+
+.chip:focus {
+  outline-color: var(--acc);
+}
+
+.chip:focus:not(:focus-visible) {
+  outline-color: transparent;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--ink);
+}
+
+.results {
+  flex: 1 1 40em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+}
+
+.resultsHead {
+  display: flex;
+  align-items: baseline;
+  gap: 1em;
+}
+
+.resultsTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2em;
+  letter-spacing: -0.02em;
+}
+
+.resultsCount {
+  color: var(--muted);
+  font-size: 1.1em;
+}
+
+.empty {
+  padding: 3em;
+  border-radius: 1em;
+  background: var(--bg-raised);
+  color: var(--fg-soft);
+  font-size: 1.25em;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(14em, calc((100% - 6em) / 5)), 1fr));
+  gap: 2em 1.5em;
+  margin: 0;
+  padding: 0.4em;
+  list-style: none;
+}
+
+@media (max-width: 760px) {
+  .layout {
+    padding: 1em 1.2em 3em;
+    gap: 2em;
+  }
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4em 1em;
+  }
+}
