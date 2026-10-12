@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type HlsType from "hls.js";
 import Link from "next/link";
+import { hlsProxyPath } from "@/lib/hls";
 import { zapTarget } from "@/lib/lineup";
 import { hueVars, marketPath, SITE_NAME, watchPath } from "@/lib/site";
 import type { LineupChannel } from "@/lib/types";
@@ -87,17 +88,24 @@ export function Player({ channels, initialSlug, market }: Props) {
   );
 
   // ── Stream ──────────────────────────────────────────────────────────────────
+  // 1. hls.js (MediaSource) reading playlists through our same-origin proxy (src/app/hls), which
+  //    serves them uncompressed and with CORS; video segments still come from the broadcaster.
+  // 2. Native HLS (Safari, TVs, recent Chrome) with the broadcaster's own URL, when hls.js can't
+  //    run or fails (e.g. segments without CORS). Native players reject a proxied playlist whose
+  //    segments live on another origin, so they always get the direct URL.
   useEffect(() => {
     const video = videoRef.current;
-    const src = cur.streamUrl;
+    const direct = cur.streamUrl;
     if (!video) return;
-    if (!src) {
+    if (!direct) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reflects the selected channel
       setStatus("offline");
       return;
     }
     let hls: HlsType | null = null;
     let cancelled = false;
+    let native = false;
+    const nativeSupported = !!video.canPlayType("application/vnd.apple.mpegurl");
     setStatus("loading");
 
     const play = async () => {
@@ -114,37 +122,51 @@ export function Player({ channels, initialSlug, market }: Props) {
       }
     };
 
+    const playNative = () => {
+      if (cancelled) return;
+      if (!nativeSupported) return setStatus("error");
+      native = true;
+      video.src = direct;
+      play();
+    };
+
     const onPlaying = () => !cancelled && setStatus((st) => (st === "blocked" ? st : "playing"));
-    const onError = () => !cancelled && setStatus("error");
+    // With hls.js, errors arrive through its ERROR event instead.
+    const onError = () => !cancelled && native && setStatus("error");
     video.addEventListener("playing", onPlaying);
     video.addEventListener("error", onError);
 
-    // Safari, Tizen, webOS and other TV engines play HLS natively; elsewhere load hls.js on demand.
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
-      play();
-    } else {
-      // The light build (no subtitles/EME/alt-audio) is ~30% smaller; the types match the full build.
-      import("hls.js/light").then(({ default: Hls }) => {
+    // The light build (no subtitles/EME/alt-audio) is ~30% smaller; the types match the full build.
+    import("hls.js/light").then(({ default: Hls }) => {
+      if (cancelled) return;
+      if (!Hls.isSupported()) return playNative();
+      const instance = new Hls({ lowLatencyMode: false, backBufferLength: 30 });
+      let recoveredMedia = false;
+      instance.on(Hls.Events.ERROR, (_e, data) => {
         if (cancelled) return;
-        if (!Hls.isSupported()) return setStatus("error");
-        const instance = new Hls({ lowLatencyMode: false, backBufferLength: 30 });
-        let recoveredMedia = false;
-        instance.on(Hls.Events.ERROR, (_e, data) => {
-          if (!data.fatal) return;
-          if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recoveredMedia) {
-            recoveredMedia = true;
-            instance.recoverMediaError();
-          } else {
-            setStatus("error");
-          }
-        });
-        instance.on(Hls.Events.MANIFEST_PARSED, () => play());
-        instance.loadSource(src);
-        instance.attachMedia(video);
-        hls = instance;
-      }, () => setStatus("error"));
-    }
+        // A segment blocked outright (status 0: no CORS header, as with TV1) won't succeed on
+        // retry; switch to native playback at once instead of waiting out hls.js's retries.
+        const blockedSegment = data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR && data.response?.code === 0;
+        if (blockedSegment && nativeSupported) {
+          instance.destroy();
+          hls = null;
+          return playNative();
+        }
+        if (!data.fatal) return;
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recoveredMedia) {
+          recoveredMedia = true;
+          instance.recoverMediaError();
+          return;
+        }
+        instance.destroy();
+        hls = null;
+        playNative();
+      });
+      instance.on(Hls.Events.MANIFEST_PARSED, () => play());
+      instance.loadSource(hlsProxyPath(cur.slug));
+      instance.attachMedia(video);
+      hls = instance;
+    }, playNative);
 
     return () => {
       cancelled = true;
@@ -154,7 +176,7 @@ export function Player({ channels, initialSlug, market }: Props) {
       video.removeAttribute("src");
       video.load();
     };
-  }, [cur.streamUrl]);
+  }, [cur.slug, cur.streamUrl]);
 
   // ── Remote keys (capture phase: runs before SpatialNav) ───────────────────────
   useEffect(() => {
