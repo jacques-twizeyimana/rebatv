@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hlsProxyPath, rewritePlaylist } from "@/lib/hls";
+import { signPlaylistUrl, verifyPlaylistUrl } from "@/lib/hls-sign";
 
 const proxy = (abs: string) => hlsProxyPath("rtv", abs);
 
@@ -21,7 +22,7 @@ describe("rewritePlaylist", () => {
 
   it("treats the line after EXT-X-STREAM-INF as a playlist even without .m3u8", () => {
     const out = rewritePlaylist("#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nvariant?token=1\n", "https://a.example/live/master.m3u8", proxy);
-    expect(out).toContain(`/hls/rtv/variant?u=${encodeURIComponent("https://a.example/live/variant?token=1")}`);
+    expect(out).toContain(`/hls/rtv/variant.m3u8?u=${encodeURIComponent("https://a.example/live/variant?token=1")}`);
   });
 
   it("makes media segments, keys and init sections absolute (fetched directly, not proxied)", () => {
@@ -49,5 +50,26 @@ describe("rewritePlaylist", () => {
 
   it("builds the master path without a query", () => {
     expect(hlsProxyPath("tv10")).toBe("/hls/tv10/playlist.m3u8");
+  });
+});
+
+describe("playlist URL signatures", () => {
+  process.env.HLS_SIGNING_SECRET = "test-secret-test-secret-test-secret-123";
+  const url = "https://liveprodeuwest.global.ssl.fastly.net/eu1/Channel/variant_live.m3u8";
+
+  it("accepts URLs the proxy signed for that channel", () => {
+    expect(verifyPlaylistUrl("bloomberg", url, signPlaylistUrl("bloomberg", url))).toBe(true);
+  });
+
+  it("rejects other URLs, other channels and missing or forged signatures", () => {
+    const sig = signPlaylistUrl("bloomberg", url);
+    expect(verifyPlaylistUrl("bloomberg", "https://evil.example/x.m3u8", sig)).toBe(false);
+    expect(verifyPlaylistUrl("dw", url, sig)).toBe(false);
+    expect(verifyPlaylistUrl("bloomberg", url, null)).toBe(false);
+    expect(verifyPlaylistUrl("bloomberg", url, sig.slice(0, -1) + (sig.endsWith("A") ? "B" : "A"))).toBe(false);
+  });
+
+  it("puts the signature into nested proxy paths", () => {
+    expect(hlsProxyPath("bloomberg", url, "abc")).toBe(`/hls/bloomberg/variant_live.m3u8?u=${encodeURIComponent(url)}&s=abc`);
   });
 });

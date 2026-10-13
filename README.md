@@ -17,7 +17,7 @@ pnpm install
 cp .env.example .env.local        # then set SESSION_SECRET (openssl rand -base64 48)
 docker compose up -d              # MariaDB 11.4 on :3306
 pnpm db:migrate
-pnpm db:seed                      # Rwanda + 7 channels with live HLS streams (SEED_RESET=1 to wipe first)
+pnpm db:seed                      # Rwanda + 10 channels with live HLS streams and logos (SEED_RESET=1 to wipe first)
 pnpm admin:create                 # prompts for email + password (or ADMIN_EMAIL / ADMIN_PASSWORD)
 pnpm dev                          # http://localhost:3000, admin at /sandberg
 ```
@@ -40,7 +40,7 @@ Checks: `pnpm test` (ULID binary round-trip, lineup numbering/featured rules, se
 - **Non-market countries** (e.g. a visitor geolocated to `us`) render the default market with `canonical` → `/rw` and `noindex`.
 - **TV navigation.** `src/components/tv/SpatialNav.tsx` ports the design's spatial `move()` scoring. Everything focusable is a real `<a>`/`<button>` with `data-nav`, so Tab, screen readers and no-JS links still work. BACK keys (Escape, Backspace, Tizen `10009`, webOS `461`) return Home and restore the last focused card; the player handles ↑/↓, PageUp/PageDown, ChannelUp/Down (Tizen `427/428`).
 - **Old TV browsers.** `browserslist` targets Chrome 87 (≈2021+ LG/Samsung), and the CSS avoids `aspect-ratio`, `:has()` and nesting. The root size scales with the viewport in pure CSS (≈16px at 1920 CSS px, the usual TV viewport), with a `rem` term so browser zoom still works.
-- **Playlist proxy.** The player uses hls.js with playlists fetched through `/hls/{slug}/…` (`src/app/hls/[slug]/[file]/route.ts`): the server fetches each `.m3u8` uncompressed and rewrites it so nested playlists stay on the proxy and video segments point straight at the broadcaster (no video passes through the app). This avoids broadcaster gzip that some clients fail to decode (`ERR_CONTENT_DECODING_FAILED`) and missing CORS on playlists. Only `.m3u8` URLs on the same origin as a published channel's stream are proxied. If hls.js can't run or a segment is blocked (e.g. no CORS on segments), the player falls back to native HLS with the broadcaster's URL.
+- **Playlist proxy.** The player uses hls.js with playlists fetched through `/hls/{slug}/…` (`src/app/hls/[slug]/[file]/route.ts`): the server fetches each `.m3u8` uncompressed and rewrites it so nested playlists stay on the proxy and video segments point straight at the broadcaster (no video passes through the app). This avoids broadcaster gzip that some clients fail to decode (`ERR_CONTENT_DECODING_FAILED`) and missing CORS on playlists. It only fetches a published channel's stream URL plus nested playlist URLs it signed itself while rewriting that channel's playlists (HMAC with `HLS_SIGNING_SECRET`, falling back to `SESSION_SECRET`), so it follows playlists across a broadcaster's CDNs but can't be used as an open proxy. If hls.js can't run or a segment is blocked (e.g. no CORS on segments), the player falls back to native HLS with the broadcaster's URL.
 - **Partial Prefetching is off** on purpose (see the comment in `next.config.ts`): with it on, channels added after a deploy were first served from the generic App Shell with generic metadata.
 
 ## Admin (`/sandberg`)
