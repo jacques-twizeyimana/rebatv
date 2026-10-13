@@ -8,7 +8,7 @@ import { searchPath } from "@/lib/site";
 
 export async function generateMetadata({ params }: PageProps<"/[country]/search">): Promise<Metadata> {
   const { country } = await params;
-  const { lineup, exact } = await loadMarket(country);
+  const { lineup } = await loadMarket(country, searchPath);
   const { market, channels } = lineup;
   const title = `Find a channel — ${channels.length} live TV channels`;
   const description = `Search ${channels.length} live TV channels by name, genre or country: local channels from ${market.name}, regional neighbours and world news.`;
@@ -16,14 +16,13 @@ export async function generateMetadata({ params }: PageProps<"/[country]/search"
     title,
     description,
     alternates: { canonical: searchPath(market.code) },
-    robots: exact ? undefined : { index: false, follow: true },
     openGraph: { title, description, url: searchPath(market.code) },
   };
 }
 
 export default async function SearchPage({ params }: PageProps<"/[country]/search">) {
   const { country } = await params;
-  const { lineup } = await loadMarket(country);
+  const { lineup } = await loadMarket(country, searchPath);
   const { market, markets, channels } = lineup;
 
   return (

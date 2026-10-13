@@ -1,20 +1,22 @@
 import "server-only";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { buildLineup, listMarkets, resolveMarket } from "@/lib/lineup";
 import { getCatalog } from "./catalog";
 
 const CC_RE = /^[a-z]{2}$/;
 
 /**
- * Resolves a /[country] segment. Valid two-letter codes that aren't markets (e.g. a visitor
- * geolocated to a country we don't cover) render the default market; `exact` tells metadata
- * to point the canonical there and keep the duplicate out of the index.
+ * Resolves a /[country] segment. A valid two-letter code that isn't a market (e.g. a visitor
+ * geolocated to a country we don't cover) redirects to the same page in the default market;
+ * `pathFor` builds that page's path for a market code. The redirect is temporary (307) because
+ * an admin can turn the country into a market later.
  */
-export async function loadMarket(country: string) {
+export async function loadMarket(country: string, pathFor: (code: string) => string) {
   if (!CC_RE.test(country)) notFound();
   const catalog = await getCatalog();
   const resolved = resolveMarket(catalog, country);
   if (!resolved) notFound();
+  if (!resolved.exact) redirect(pathFor(resolved.market.code));
   const lineup = buildLineup(catalog, resolved.market.code)!;
   return { catalog, lineup, exact: resolved.exact };
 }

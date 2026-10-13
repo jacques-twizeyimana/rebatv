@@ -9,7 +9,7 @@ import { marketPath, searchPath, SITE_NAME, SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: PageProps<"/[country]">): Promise<Metadata> {
   const { country } = await params;
-  const { lineup, exact } = await loadMarket(country);
+  const { lineup } = await loadMarket(country, marketPath);
   const { market, local } = lineup;
   const names = local.slice(0, 4).map((c) => c.name).join(", ");
   const title = `Live TV in ${market.name} — watch local channels free`;
@@ -18,14 +18,13 @@ export async function generateMetadata({ params }: PageProps<"/[country]">): Pro
     title: { absolute: `${title} · ${SITE_NAME}` },
     description,
     alternates: { canonical: marketPath(market.code) },
-    robots: exact ? undefined : { index: false, follow: true },
     openGraph: { title, description, url: marketPath(market.code) },
   };
 }
 
 export default async function HomePage({ params }: PageProps<"/[country]">) {
   const { country } = await params;
-  const { lineup } = await loadMarket(country);
+  const { lineup } = await loadMarket(country, marketPath);
   const { market, markets, hero, local, featured, international } = lineup;
   const code = market.code;
 

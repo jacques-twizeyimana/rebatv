@@ -23,7 +23,7 @@ function canonicalMarket(catalog: Catalog, countryCode: string): string {
 
 async function load(params: PageProps<"/[country]/watch/[slug]">["params"]) {
   const { country, slug } = await params;
-  const { catalog, lineup } = await loadMarket(country);
+  const { catalog, lineup } = await loadMarket(country, (code) => watchPath(code, slug));
   const channel = lineup.channels.find((c) => c.slug === slug);
   if (!channel) notFound();
   return { catalog, lineup, channel, canonical: watchPath(canonicalMarket(catalog, channel.countryCode), slug) };
