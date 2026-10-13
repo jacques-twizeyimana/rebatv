@@ -17,7 +17,7 @@ pnpm install
 cp .env.example .env.local        # then set SESSION_SECRET (openssl rand -base64 48)
 docker compose up -d              # MariaDB 11.4 on :3306
 pnpm db:migrate
-pnpm db:seed                      # Rwanda + 10 channels with live HLS streams and logos (SEED_RESET=1 to wipe first)
+pnpm db:seed                      # Rwanda + 43 channels with live HLS streams and logos (SEED_RESET=1 to wipe first)
 pnpm admin:create                 # prompts for email + password (or ADMIN_EMAIL / ADMIN_PASSWORD)
 pnpm dev                          # http://localhost:3000, admin at /sandberg
 ```

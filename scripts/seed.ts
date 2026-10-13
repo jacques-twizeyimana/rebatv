@@ -25,6 +25,20 @@ const COUNTRIES: { code: string; name: string; isMarket: boolean; sortOrder: num
   { code: "TZ", name: "Tanzania", isMarket: false, sortOrder: 4 },
   { code: "QA", name: "Qatar", isMarket: false, sortOrder: 10 },
   { code: "RU", name: "Russia", isMarket: false, sortOrder: 11 },
+  { code: "XA", name: "Pan-African", isMarket: false, sortOrder: 12 },
+  { code: "ZA", name: "South Africa", isMarket: false, sortOrder: 13 },
+  { code: "DE", name: "Germany", isMarket: false, sortOrder: 14 },
+  { code: "FR", name: "France", isMarket: false, sortOrder: 15 },
+  { code: "GB", name: "United Kingdom", isMarket: false, sortOrder: 16 },
+  { code: "EU", name: "Europe", isMarket: false, sortOrder: 17 },
+  { code: "TR", name: "Türkiye", isMarket: false, sortOrder: 18 },
+  { code: "CN", name: "China", isMarket: false, sortOrder: 19 },
+  { code: "JP", name: "Japan", isMarket: false, sortOrder: 20 },
+  { code: "US", name: "United States", isMarket: false, sortOrder: 21 },
+  { code: "ER", name: "Eritrea", isMarket: false, sortOrder: 5 },
+  { code: "AE", name: "United Arab Emirates", isMarket: false, sortOrder: 22 },
+  { code: "AT", name: "Austria", isMarket: false, sortOrder: 23 },
+  { code: "ES", name: "Spain", isMarket: false, sortOrder: 24 },
 ];
 
 type SeedChannel = {
@@ -43,8 +57,8 @@ type SeedChannel = {
 
 // Order = channel numbers within Rwanda. Hues and genres follow the original design.
 // Stream URLs were taken from each broadcaster's official live page (source in the comment).
-// Logos are hotlinked: Wikimedia Commons where it has a current logo (durable, freely licensed),
-// otherwise the broadcaster's own site.
+// Logos are hotlinked: Wikimedia Commons where it has a current logo (durable, public domain or
+// CC BY-SA), otherwise the broadcaster's own site, otherwise iptv-org's community uploads (imgur).
 const CHANNELS: SeedChannel[] = [
   {
     // https://www.rba.co.rw/tv
@@ -158,6 +172,388 @@ const CHANNELS: SeedChannel[] = [
     description: "Russian state-funded international news channel, in English.",
     streamUrl: "https://rt-glb.rttv.com/dvr/rtnews/playlist.m3u8",
     logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a0/Russia-today-logo.svg",
+  },
+
+  // International news channels published free by the broadcasters on their own CDNs (checked
+  // end to end from Kigali: playlists, segments and CORS). Partner/FAST feeds and restreams are
+  // deliberately excluded.
+  {
+    // https://www.africanews.com/live/
+    short: "AFRICA",
+    name: "Africanews",
+    hue: 18,
+    genre: "African news",
+    country: "XA",
+    description: "Pan-African news channel from the Euronews group, in English.",
+    streamUrl: "https://cdn-euronews.akamaized.net/live/eds/africanews-en/25049/index.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/1/19/Africanews_logo.svg",
+    featured: true,
+  },
+  {
+    // https://www.dw.com/en/live-tv/channel-english
+    slug: "dw-news",
+    short: "DW",
+    name: "DW News",
+    hue: 215,
+    genre: "World news",
+    country: "DE",
+    description: "Germany’s international broadcaster Deutsche Welle, news in English.",
+    streamUrl: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/master.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/7/75/Deutsche_Welle_symbol_2012.svg",
+    featured: true,
+  },
+  {
+    // https://www.france24.com/en/live
+    short: "F24",
+    name: "France 24",
+    hue: 205,
+    genre: "World news",
+    country: "FR",
+    description: "French international news channel, in English.",
+    streamUrl: "https://live.france24.com/hls/live/2037218/F24_EN_HI_HLS/master_5000.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/c/c1/France_24_logo_%282013%29.svg",
+  },
+  {
+    // https://www.france24.com/fr/direct
+    short: "F24 FR",
+    name: "France 24 Français",
+    hue: 198,
+    genre: "World news",
+    country: "FR",
+    description: "French international news channel, in French.",
+    streamUrl: "https://live.france24.com/hls/live/2037179/F24_FR_HI_HLS/master_5000.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/c/c1/France_24_logo_%282013%29.svg",
+  },
+  {
+    // https://www.tv5monde.com/ — segments only allow tv5monde.com, so hls.js can't play them;
+    // the player falls back to native HLS (Safari, smart TVs, recent Chrome).
+    short: "TV5",
+    name: "TV5Monde Info",
+    hue: 320,
+    genre: "World news",
+    country: "FR",
+    description: "International French-language news from TV5Monde.",
+    streamUrl: "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/variant.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/5/54/Logo_TV5Monde_2025.svg",
+  },
+  {
+    // https://www.bbc.com/news — BBC's own worldwide stream of the BBC News channel
+    short: "BBC",
+    name: "BBC News",
+    hue: 0,
+    genre: "World news",
+    country: "GB",
+    description: "The BBC News channel, in English.",
+    streamUrl: "https://vs-hls-push-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_news_channel_hd/mobile_wifi_main_hd_abr_v2.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a2/BBC_News_2022_%28Alt%29.svg",
+  },
+  {
+    // https://www.euronews.com/live
+    short: "EURONEWS",
+    name: "Euronews",
+    hue: 235,
+    genre: "World news",
+    country: "EU",
+    description: "European news channel, in English.",
+    streamUrl: "https://cdn-euronews.akamaized.net/live/eds/euronews-en/25002/index.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/9/9c/Euronews_2022.svg",
+  },
+  {
+    // https://www.trtworld.com/live
+    short: "TRT",
+    name: "TRT World",
+    hue: 350,
+    genre: "World news",
+    country: "TR",
+    description: "Türkiye’s public international news channel, in English.",
+    streamUrl: "https://tv-trtworld.medya.trt.com.tr/master.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/2/27/TRT_World.svg",
+  },
+  {
+    // https://www.cgtn.com/tv
+    short: "CGTN",
+    name: "CGTN",
+    hue: 8,
+    genre: "World news",
+    country: "CN",
+    description: "China’s state-run international news channel, in English.",
+    streamUrl: "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/8/81/CGTN.svg",
+  },
+  {
+    // https://www3.nhk.or.jp/nhkworld/en/live/
+    short: "NHK",
+    name: "NHK World-Japan",
+    hue: 340,
+    genre: "World news",
+    country: "JP",
+    description: "Japan’s public international channel, news and culture in English.",
+    streamUrl: "https://media-tyo.hls.nhkworld.jp/hls/w/live/master.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/2/25/NHK_WORLD-JAPAN_logo.svg",
+  },
+  {
+    // https://www.bloomberg.com/live — Europe, Middle East & Africa edition
+    short: "BLOOMBERG",
+    name: "Bloomberg Television",
+    hue: 270,
+    genre: "Business news",
+    country: "US",
+    description: "Business and markets news, in English (Europe, Middle East and Africa edition).",
+    streamUrl: "https://www.bloomberg.com/media-manifest/streams/eu.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/6/66/Bloomberg_Television_logo.svg",
+  },
+  {
+    // https://www.cbsnews.com/live/
+    short: "CBS",
+    name: "CBS News 24/7",
+    hue: 225,
+    genre: "World news",
+    country: "US",
+    description: "US and world news from CBS News, in English.",
+    streamUrl: "https://cbsn-us.cbsnstream.cbsnews.com/out/v1/55a8648e8f134e82a470f83d562deeca/master.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/b/b0/CBS_News_247_logo.svg",
+  },
+  {
+    // https://www.sabcnews.com/sabcnews/live-stream/
+    short: "SABC",
+    name: "SABC News",
+    hue: 28,
+    genre: "News & general",
+    country: "ZA",
+    description: "South Africa’s public broadcaster news channel, in English.",
+    streamUrl: "https://sabconetanw.cdn.mangomolo.com/news/smil:news.stream.smil/master.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/f1/SABC_News_logo_2018.jpg",
+  },
+
+  // Discovered via iptv-org (github.com/iptv-org/iptv), kept only where the stream is on the
+  // broadcaster's own domain or its streaming provider, and checked end to end from Kigali.
+  // East Africa
+  {
+    // https://www.inooro.co.ke
+    short: "INOORO",
+    name: "Inooro TV",
+    hue: 8,
+    genre: "Entertainment",
+    country: "KE",
+    description: "Kenyan channel from Royal Media Services, in Kikuyu.",
+    streamUrl: "https://live-onesignal.royalmedia.co.ke/live/T-MxRsFebq6zx7k2QFMbLw.m3u8",
+    logoUrl: "https://i.imgur.com/5qFJtmo.png",
+  },
+  {
+    // https://akilikids.co.ke
+    slug: "akili-kids",
+    short: "AKILI",
+    name: "Akili Kids!",
+    hue: 48,
+    genre: "Kids",
+    country: "KE",
+    description: "Kenyan free-to-air children’s channel.",
+    streamUrl: "https://m6.livecdn.io/akilikids.co.ke/akilikids.smil/playlist.m3u8",
+    logoUrl: "https://i.imgur.com/xFm2co6.png",
+  },
+  {
+    // https://www.bukedde.co.ug
+    short: "BUKEDDE 1",
+    name: "Bukedde TV 1",
+    hue: 356,
+    genre: "News & general",
+    country: "UG",
+    description: "Ugandan channel from Vision Group, in Luganda.",
+    streamUrl: "https://stream.hydeinnovations.com/bukedde1flussonic/index.m3u8",
+    logoUrl: "https://i.imgur.com/HFq5QlJ.png",
+  },
+  {
+    // https://www.bukedde.co.ug
+    short: "BUKEDDE 2",
+    name: "Bukedde TV 2",
+    hue: 12,
+    genre: "Entertainment",
+    country: "UG",
+    description: "Ugandan entertainment channel from Vision Group, in Luganda.",
+    streamUrl: "https://stream.hydeinnovations.com/bukedde2flussonic/index.m3u8",
+    logoUrl: "https://i.imgur.com/ukwPZeY.png",
+  },
+  {
+    // https://bbstv.ug
+    // No CORS on playlists or segments: plays via the native-HLS fallback (Safari, TVs, recent Chrome).
+    short: "BBS",
+    name: "BBS TV",
+    hue: 32,
+    genre: "News & general",
+    country: "UG",
+    description: "The Buganda Kingdom’s television channel, in Luganda.",
+    streamUrl: "https://bbstv.ug/hls/ch01/index.m3u8",
+    logoUrl: "https://i.imgur.com/Hub1AXv.png",
+  },
+  {
+    // https://www.visiongroup.co.ug
+    short: "TV WEST",
+    name: "TV West",
+    hue: 122,
+    genre: "General",
+    country: "UG",
+    description: "Western Uganda channel from Vision Group.",
+    streamUrl: "https://stream.hydeinnovations.com/tvwest-flussonic/index.m3u8",
+    logoUrl: "https://i.imgur.com/EiJzkIz.png",
+  },
+  {
+    // https://www.visiongroup.co.ug
+    short: "WAN LUO",
+    name: "Wan Luo TV",
+    hue: 150,
+    genre: "General",
+    country: "UG",
+    description: "Northern Uganda channel from Vision Group, in Luo.",
+    streamUrl: "https://stream.hydeinnovations.com/luotv-flussonic/index.m3u8",
+    logoUrl: "https://i.imgur.com/4PUUp3E.png",
+  },
+  {
+    // https://www.tbc.go.tz
+    short: "TBC2",
+    name: "TBC2",
+    hue: 206,
+    genre: "Entertainment",
+    country: "TZ",
+    description: "Tanzania Broadcasting Corporation’s entertainment channel, in Swahili.",
+    streamUrl: "https://stream-134630.castr.net/5fe35eae8c53540cab83659a/live_44ed95e05b6d11f18d5d85805abbdd6f/index.m3u8",
+    logoUrl: "https://i.imgur.com/VkUJt2q.png",
+  },
+  {
+    // https://www.shabait.com
+    slug: "eri-tv",
+    short: "ERI-TV",
+    name: "ERi-TV 1",
+    hue: 140,
+    genre: "News & general",
+    country: "ER",
+    description: "Eritrea’s national television.",
+    streamUrl: "https://jmc-live.ercdn.net/eritreatv/eritreatv.m3u8",
+    logoUrl: "https://i.imgur.com/bTR0Huw.png",
+  },
+  // International
+  {
+    // https://www.aljazeera.net/live
+    short: "AJ ARABIC",
+    name: "Al Jazeera Arabic",
+    hue: 38,
+    genre: "World news",
+    country: "QA",
+    description: "Al Jazeera’s flagship Arabic news channel.",
+    streamUrl: "https://live-hls-web-aja.getaj.net/AJA/index.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Aljazeera_eng.svg",
+  },
+  {
+    // https://www.skynewsarabia.com/live-stream
+    short: "SKY ARABIA",
+    name: "Sky News Arabia",
+    hue: 355,
+    genre: "World news",
+    country: "AE",
+    description: "Arabic-language news channel based in Abu Dhabi.",
+    streamUrl: "https://live-stream.skynewsarabia.com/c-horizontal-channel/horizontal-stream/index.m3u8",
+    logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Sky_News_Arabia_2024.svg",
+  },
+  // Music (Trace's own platform, TRACE+)
+  {
+    // https://trace.plus
+    short: "MZIKI",
+    name: "Trace Mziki",
+    hue: 4,
+    genre: "Music",
+    country: "FR",
+    description: "Trace’s music channel for East Africa, in Swahili.",
+    streamUrl: "https://channels.trace.plus/Traceprod/MZIKI_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/l3X9Gg4.png",
+  },
+  {
+    // https://trace.plus
+    short: "KITOKO",
+    name: "Trace Kitoko",
+    hue: 280,
+    genre: "Music",
+    country: "FR",
+    description: "Trace’s music channel for Central Africa.",
+    streamUrl: "https://channels.trace.plus/Traceprod/KITOKO_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/q6vkMrU.png",
+  },
+  {
+    // https://trace.plus
+    short: "TRACE AFRICA",
+    name: "Trace Africa",
+    hue: 20,
+    genre: "Music",
+    country: "FR",
+    description: "Trace’s African music channel (French-speaking edition).",
+    streamUrl: "https://channels.trace.plus/Traceprod/AFRICA_FR_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/kPUkoS7.png",
+  },
+  {
+    // https://trace.plus
+    short: "NAIJA",
+    name: "Trace Naija",
+    hue: 110,
+    genre: "Music",
+    country: "FR",
+    description: "Trace’s Nigerian music channel.",
+    streamUrl: "https://channels.trace.plus/Traceprod/NAIJA_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/Rguekcp.png",
+  },
+  {
+    // https://trace.plus
+    short: "TRACE URBAN",
+    name: "Trace Urban",
+    hue: 300,
+    genre: "Music",
+    country: "FR",
+    description: "Trace’s urban music channel (African French-speaking edition).",
+    streamUrl: "https://channels.trace.plus/Traceprod/URBAN_AFRIC_FR_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/DLIbUMx.png",
+  },
+  {
+    // https://trace.plus
+    short: "GOSPEL",
+    name: "Trace Gospel",
+    hue: 265,
+    genre: "Gospel music & religion",
+    country: "FR",
+    description: "Gospel music from Trace.",
+    streamUrl: "https://channels.trace.plus/Traceprod/GOSPEL_ROA_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/X0UmU3K.png",
+  },
+  // Sports
+  {
+    // https://trace.plus
+    short: "SPORT STARS",
+    name: "Trace Sport Stars",
+    hue: 195,
+    genre: "Sports",
+    country: "FR",
+    description: "Athletes’ stories and sports lifestyle from Trace.",
+    streamUrl: "https://channels.trace.plus/Traceprod/TRACE_SPORT_STARS_hd/index.m3u8",
+    logoUrl: "https://i.imgur.com/FabFP5A.png",
+  },
+  {
+    // https://www.redbull.com/int-en/live
+    short: "RED BULL",
+    name: "Red Bull TV",
+    hue: 225,
+    genre: "Sports",
+    country: "AT",
+    description: "Action sports, events and music from Red Bull Media House.",
+    streamUrl: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+    logoUrl: "https://i.postimg.cc/8c78JM28/image.png",
+  },
+  {
+    // https://www.realmadrid.com/en/rmtv
+    slug: "real-madrid-tv",
+    short: "RMTV",
+    name: "Real Madrid TV",
+    hue: 250,
+    genre: "Sports",
+    country: "ES",
+    description: "Real Madrid’s official club channel, in English.",
+    streamUrl: "https://rmtv.akamaized.net/hls/live/2043154/rmtv-en-web/master.m3u8",
+    logoUrl: "https://i.imgur.com/5pMo7dL.png",
   },
 ];
 
