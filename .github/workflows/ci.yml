@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    # main is checked by deploy.yml, which runs this workflow before deploying.
+    branches-ignore: [main]
+  workflow_call:
+
+concurrency:
+  # github.workflow is the caller's name when deploy.yml calls this, so the two never cancel each other.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      # Version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # No `pnpm build` here: the build prerenders pages from the production database, which is
+      # only reachable on the VPS, so deploy.sh builds there.

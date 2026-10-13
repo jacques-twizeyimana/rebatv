@@ -50,10 +50,22 @@ Checks: `pnpm test` (ULID binary round-trip, lineup numbering/featured rules, se
 - Login is rate-limited to 10 failed attempts per 15 minutes per IP or email (`login_attempts` table), and unknown emails cost the same argon2 work as wrong passwords, so emails can't be probed.
 - Stream URLs and logo URLs must be `https://` (mixed content would be blocked on the HTTPS site).
 
-## Deploying to Vercel
+## Deploying (VPS + GitHub Actions)
 
-1. Create a MariaDB database (utf8mb4) reachable from Vercel and run `pnpm db:migrate` against it.
-2. Set `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_SITE_URL` (and optionally `DEFAULT_MARKET`) for **Production and Preview, including build time**: pages are prerendered from the database during `next build`.
-3. Create the first admin from your machine: `DATABASE_URL=… pnpm admin:create`.
+Everything runs on one VPS: nginx → Next.js (`node server.js`, port 3000) → MariaDB on `127.0.0.1` (not exposed).
 
-The pool (`src/db/client.ts`) is small (5 connections) and registered with `attachDatabasePool` so Fluid compute releases idle connections.
+- **CI** (`.github/workflows/ci.yml`): lint, typecheck and tests on every PR and branch push.
+- **Deploy** (`.github/workflows/deploy.yml`): on push to `main`, runs CI, then SSHes into the VPS and runs `deploy/deploy.sh <sha>`. Run it manually from the Actions tab with **rollback** to switch back to the previous release.
+- **`deploy/deploy.sh`**: fetches the commit, runs `pnpm install`, `pnpm db:migrate` and `pnpm build` **on the VPS** (the build prerenders from the private database), assembles a standalone release in `/srv/rebatv/releases/<timestamp>-<sha>`, points `/srv/rebatv/current` at it, restarts the `rebatv` systemd service and health-checks it. If the new release doesn't answer, it switches back automatically. It keeps the live release plus the 2 before it. Also `deploy.sh --rollback [id]` and `deploy.sh --list`. A rollback doesn't undo migrations, so keep them backwards compatible.
+
+One-time VPS setup:
+
+1. Node 22 and pnpm (`corepack enable`); a `rebatv` user that owns `/srv/rebatv`.
+2. MariaDB with `bind-address = 127.0.0.1`, a `rebatv` database (utf8mb4) and a user with privileges on it only.
+3. `git clone <repo> /srv/rebatv/repo`; put the production env in `/srv/rebatv/shared/.env` (`DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_SITE_URL`, optionally `HLS_SIGNING_SECRET`, `DEFAULT_MARKET`), readable only by `rebatv`.
+4. Install `deploy/rebatv.service` into `/etc/systemd/system/` and enable it. Let the deploy user restart it without a password:
+   `rebatv ALL=(root) NOPASSWD: /usr/bin/systemctl restart rebatv` (via `visudo -f /etc/sudoers.d/rebatv`).
+5. First deploy by hand: `/srv/rebatv/repo/deploy/deploy.sh origin/main`, then `pnpm admin:create` from `/srv/rebatv/repo` (with the env loaded).
+6. GitHub → Settings → Environments → `production`, add the secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` (a dedicated ed25519 key whose public half is in that user's `authorized_keys`), `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <host>`) and optionally `DEPLOY_PORT`.
+
+`next build` uses roughly 1 GB of RAM; on a VPS with 2 GB or less, add swap.

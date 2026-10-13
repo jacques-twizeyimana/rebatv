@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
   // stayed generic + noindex. Without it, the first request renders the real page (and a real 404
   // for unknown slugs) and caches that.
   partialPrefetching: false,
+  // Self-contained server build (server.js + traced node_modules) that deploy/deploy.sh releases.
+  output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   cacheLife: {

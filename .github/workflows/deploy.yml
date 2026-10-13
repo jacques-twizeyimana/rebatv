@@ -1,0 +1,62 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "deploy the selected branch, or roll back to the previous release"
+        type: choice
+        options: [deploy, rollback]
+        default: deploy
+
+# One deploy at a time; never cancel one halfway through.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    if: github.event_name == 'push' || inputs.action == 'deploy'
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: ${{ inputs.action == 'rollback' && 'Roll back' || 'Deploy' }} on VPS
+    needs: checks
+    # Run after passing checks, or straight away for a rollback (checks are skipped then).
+    if: ${{ !cancelled() && (needs.checks.result == 'success' || (needs.checks.result == 'skipped' && inputs.action == 'rollback')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      # Repository or environment secrets:
+      #   DEPLOY_HOST         VPS hostname or IP
+      #   DEPLOY_USER         SSH user that owns /srv/rebatv (rebatv in the README setup)
+      #   DEPLOY_SSH_KEY      private key for that user (ed25519, no passphrase)
+      #   DEPLOY_KNOWN_HOSTS  output of `ssh-keyscan -p <port> <host>`, pins the host key
+      #   DEPLOY_PORT         optional, defaults to 22
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Run deploy.sh on the VPS
+        env:
+          ARGS: ${{ inputs.action == 'rollback' && '--rollback' || github.sha }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
+            "$DEPLOY_USER@$DEPLOY_HOST" "/srv/rebatv/repo/deploy/deploy.sh $ARGS"
