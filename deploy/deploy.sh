@@ -25,7 +25,7 @@ CURRENT=$APP_ROOT/current
 ENV_FILE=${ENV_FILE:-$APP_ROOT/shared/.env}
 KEEP_RELEASES=${KEEP_RELEASES:-3}
 RESTART_CMD=${RESTART_CMD:-sudo systemctl restart rebatv}
-HEALTH_URL=${HEALTH_URL:-http://127.0.0.1:3000/}
+HEALTH_URL=${HEALTH_URL:-http://127.0.0.1:3000/healthz}
 HEALTH_TIMEOUT=${HEALTH_TIMEOUT:-60}
 
 log() { printf '\033[1m[deploy %s]\033[0m %s\n' "$(date +%H:%M:%S)" "$*"; }
@@ -96,8 +96,7 @@ rollback() {
   fi
   [[ -n $target && -d $RELEASES/$target ]] || die "no release to roll back to (live: ${live:-none})"
   switch_to "$target"
-  restart
-  health_check || die "release $target is not healthy either"
+  if ! restart || ! health_check; then die "release $target did not come up"; fi
 }
 
 # Stage 2: build the commit that's checked out in $REPO and release it.
@@ -113,6 +112,9 @@ build_and_release() {
   set +a
   # pnpm skips devDependencies (TypeScript, drizzle-kit…) when NODE_ENV=production; next build sets it itself.
   unset NODE_ENV
+  # Corepack provides the pnpm pinned in package.json; never stop to ask before downloading it.
+  export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+  command -v pnpm >/dev/null || die "pnpm not found for $(id -un): install Node 22 system-wide and run 'sudo corepack enable'"
 
   id="$(date -u +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
   dest=$RELEASES/$id
@@ -135,14 +137,13 @@ build_and_release() {
 
   previous=$(current_release)
   switch_to "$id"
-  restart
-  if ! health_check; then
+  # A failed restart (e.g. the service isn't installed) is handled like a failed health check.
+  if ! restart || ! health_check; then
     log "New release did not come up"
     if [[ -n $previous ]]; then
       log "Rolling back to $previous"
       switch_to "$previous"
-      restart
-      health_check || log "WARNING: previous release $previous is not healthy either"
+      if ! restart || ! health_check; then log "WARNING: previous release $previous did not come up either"; fi
     fi
     rm -rf "$dest"
     die "deploy of $id failed"
