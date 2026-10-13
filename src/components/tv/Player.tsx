@@ -317,12 +317,33 @@ export function Player({ channels, initialSlug, market }: Props) {
     } catch {}
   };
 
-  const unmute = () => {
+  const unmute = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = false;
     setStatus("playing");
-  };
+  }, []);
+
+  // Browsers only allow sound after the viewer has interacted with the page, so a direct load
+  // (shared link, bookmark, refresh) starts muted. Turn the sound on with the first key press,
+  // click or tap anywhere, not only on the Unmute button. Zapping is such a press too, so the
+  // next channel doesn't stay silently muted.
+  useEffect(() => {
+    if (status !== "blocked") return;
+    const onGesture = () => {
+      // Unmuting outside a user gesture makes the browser pause the video (e.g. Escape, which
+      // doesn't count as one); wait for the next press instead.
+      const activation = (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation;
+      if (activation && !activation.isActive) return;
+      unmute();
+    };
+    window.addEventListener("keydown", onGesture, true);
+    window.addEventListener("pointerup", onGesture, true);
+    return () => {
+      window.removeEventListener("keydown", onGesture, true);
+      window.removeEventListener("pointerup", onGesture, true);
+    };
+  }, [status, unmute]);
 
   const statusText: Partial<Record<Status, string>> = {
     offline: `${cur.name} isn’t streaming on rebaTV right now. Try another channel with CH + or CH −.`,
