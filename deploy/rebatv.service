@@ -1,0 +1,32 @@
+# systemd unit for rebaTV. Install with:
+#   sudo cp deploy/rebatv.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now rebatv
+# deploy.sh restarts it after switching /srv/rebatv/current to a new release.
+[Unit]
+Description=rebaTV (Next.js)
+After=network.target mariadb.service
+Wants=mariadb.service
+
+[Service]
+Type=simple
+User=rebatv
+Group=rebatv
+WorkingDirectory=/srv/rebatv/current
+EnvironmentFile=/srv/rebatv/shared/.env
+Environment=NODE_ENV=production PORT=3000 HOSTNAME=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+# Give in-flight requests a moment on restart.
+TimeoutStopSec=15
+MemoryMax=1G
+
+# Hardening: the app only needs to write its own release (Next's cache lives in .next/cache).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/rebatv/releases
+
+[Install]
+WantedBy=multi-user.target
