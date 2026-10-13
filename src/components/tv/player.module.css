@@ -58,6 +58,43 @@
   line-height: 1.45;
 }
 
+.tuning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9em;
+  margin-top: 1em;
+  color: var(--fg-soft);
+  font-size: 1.2em;
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--fg-soft);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  background: transparent;
+  animation: spin 1s linear infinite;
+}
+
+.tuningWord {
+  animation: wordIn 0.3s ease-out;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+}
+
 .video {
   composes: fill;
   width: 100%;

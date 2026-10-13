@@ -16,7 +16,15 @@ import s from "./player.module.css";
 
 type PlayerChannel = Pick<
   LineupChannel,
-  "id" | "slug" | "short" | "name" | "num" | "tag" | "hue" | "streamUrl" | "logoUrl"
+  | "id"
+  | "slug"
+  | "short"
+  | "name"
+  | "num"
+  | "tag"
+  | "hue"
+  | "streamUrl"
+  | "logoUrl"
 >;
 type Props = { channels: PlayerChannel[]; initialSlug: string; market: string };
 type Status = "idle" | "loading" | "playing" | "blocked" | "offline" | "error";
@@ -28,6 +36,78 @@ const DOWN_KEYS = new Set(["ArrowDown", "PageDown", "ChannelDown"]);
 // Tizen reports CH+/CH− as keyCodes 427/428.
 const UP_CODES = new Set([427]);
 const DOWN_CODES = new Set([428]);
+
+// Fetch hls.js as soon as this module loads, in parallel with hydration, rather than after the
+// player effect runs.
+const hlsModule = typeof window === "undefined" ? null : import("hls.js/light");
+hlsModule?.catch(() => {});
+
+// hls.js starts on the first variant in the master playlist (usually the lowest) and only climbs
+// once it has measured a few segments, so every tune-in began blurry. Seed it with the bandwidth
+// measured on the previous channel/visit instead, else the browser's own hint.
+const BWE_KEY = "rtv:bwe";
+let lastBandwidth = 0;
+
+function initialBandwidth(): number {
+  if (!lastBandwidth) {
+    try {
+      lastBandwidth = Number(localStorage.getItem(BWE_KEY)) || 0;
+    } catch {}
+  }
+  if (lastBandwidth) return lastBandwidth;
+  // Chromium's `downlink` badly underestimates fast links, so only trust its coarse "slow" signal.
+  // If 3 Mbps is too optimistic, hls.js drops a level mid-fragment.
+  const type = (
+    navigator as Navigator & { connection?: { effectiveType?: string } }
+  ).connection?.effectiveType;
+  return type && type !== "4g" ? 1e6 : 3e6;
+}
+
+function saveBandwidth(bps: number) {
+  if (!Number.isFinite(bps) || bps <= 0) return;
+  lastBandwidth = Math.round(bps);
+  try {
+    localStorage.setItem(BWE_KEY, String(lastBandwidth));
+  } catch {}
+}
+
+// Channels whose segments hls.js can't fetch (no CORS, e.g. TV1): go straight to native playback
+// on later visits instead of loading two playlists through hls.js just to fail again.
+const nativeOnly = new Set<string>();
+
+// Rotating "Tuning in…" lines while a stream starts. The first one stays first.
+const TUNING_WORDS = [
+  "Catching the signal…",
+  "Riding the airwaves…",
+  "Finding the frequency…",
+  "Catching the wave…",
+  "Adjusting the antenna…",
+  "Locking on to the broadcast…",
+  "Tuning in…",
+  "Going on air…",
+];
+const TUNING_MS = 1800;
+
+function TuningIn({ channel }: { channel: string }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setI((n) => (n + 1) % TUNING_WORDS.length),
+      TUNING_MS,
+    );
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className={s.tuning} role="status">
+      <div className={s.spinner} aria-hidden="true" />
+      {/* Announce once; the rotating line would otherwise be read out every couple of seconds. */}
+      <span className="sr-only">Tuning in to {channel}</span>
+      <span key={i} className={s.tuningWord} aria-hidden="true">
+        {TUNING_WORDS[i]}
+      </span>
+    </div>
+  );
+}
 
 function readFavs(): string[] {
   try {
@@ -45,7 +125,9 @@ export function Player({ channels, initialSlug, market }: Props) {
   const [favs, setFavs] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const overlayVisible = useRef(true);
 
   const cur = channels.find((c) => c.slug === slug) ?? channels[0];
@@ -105,7 +187,9 @@ export function Player({ channels, initialSlug, market }: Props) {
     let hls: HlsType | null = null;
     let cancelled = false;
     let native = false;
-    const nativeSupported = !!video.canPlayType("application/vnd.apple.mpegurl");
+    const nativeSupported = !!video.canPlayType(
+      "application/vnd.apple.mpegurl",
+    );
     setStatus("loading");
 
     const play = async () => {
@@ -130,24 +214,49 @@ export function Player({ channels, initialSlug, market }: Props) {
       play();
     };
 
-    const onPlaying = () => !cancelled && setStatus((st) => (st === "blocked" ? st : "playing"));
+    const onPlaying = () =>
+      !cancelled && setStatus((st) => (st === "blocked" ? st : "playing"));
     // With hls.js, errors arrive through its ERROR event instead.
     const onError = () => !cancelled && native && setStatus("error");
     video.addEventListener("playing", onPlaying);
     video.addEventListener("error", onError);
+    const cleanup = () => {
+      cancelled = true;
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("error", onError);
+      hls?.destroy();
+      video.removeAttribute("src");
+      video.load();
+    };
+
+    if (nativeOnly.has(cur.slug) && nativeSupported) {
+      playNative();
+      return cleanup;
+    }
 
     // The light build (no subtitles/EME/alt-audio) is ~30% smaller; the types match the full build.
-    import("hls.js/light").then(({ default: Hls }) => {
+    hlsModule!.then(({ default: Hls }) => {
       if (cancelled) return;
       if (!Hls.isSupported()) return playNative();
-      const instance = new Hls({ lowLatencyMode: false, backBufferLength: 30 });
+      const instance = new Hls({
+        lowLatencyMode: false,
+        backBufferLength: 30,
+        abrEwmaDefaultEstimate: initialBandwidth(),
+        // Pick the start level from that estimate rather than test-loading the lowest level first.
+        testBandwidth: false,
+        // Don't spend bandwidth (and start-up time) on renditions larger than the screen.
+        capLevelToPlayerSize: true,
+      });
       let recoveredMedia = false;
       instance.on(Hls.Events.ERROR, (_e, data) => {
         if (cancelled) return;
         // A segment blocked outright (status 0: no CORS header, as with TV1) won't succeed on
         // retry; switch to native playback at once instead of waiting out hls.js's retries.
-        const blockedSegment = data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR && data.response?.code === 0;
+        const blockedSegment =
+          data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR &&
+          data.response?.code === 0;
         if (blockedSegment && nativeSupported) {
+          nativeOnly.add(cur.slug);
           instance.destroy();
           hls = null;
           return playNative();
@@ -163,19 +272,15 @@ export function Player({ channels, initialSlug, market }: Props) {
         playNative();
       });
       instance.on(Hls.Events.MANIFEST_PARSED, () => play());
+      instance.on(Hls.Events.FRAG_BUFFERED, () =>
+        saveBandwidth(instance.bandwidthEstimate),
+      );
       instance.loadSource(hlsProxyPath(cur.slug));
       instance.attachMedia(video);
       hls = instance;
     }, playNative);
 
-    return () => {
-      cancelled = true;
-      video.removeEventListener("playing", onPlaying);
-      video.removeEventListener("error", onError);
-      hls?.destroy();
-      video.removeAttribute("src");
-      video.load();
-    };
+    return cleanup;
   }, [cur.slug, cur.streamUrl]);
 
   // ── Remote keys (capture phase: runs before SpatialNav) ───────────────────────
@@ -195,7 +300,8 @@ export function Player({ channels, initialSlug, market }: Props) {
         e.preventDefault();
       }
       if (wasHidden && !overlayRef.current?.contains(document.activeElement)) {
-        const target = overlayRef.current?.querySelector<HTMLElement>("[data-autofocus]");
+        const target =
+          overlayRef.current?.querySelector<HTMLElement>("[data-autofocus]");
         if (target) focusEl(target);
       }
     };
@@ -219,7 +325,6 @@ export function Player({ channels, initialSlug, market }: Props) {
   };
 
   const statusText: Partial<Record<Status, string>> = {
-    loading: "Tuning in…",
     offline: `${cur.name} isn’t streaming on rebaTV right now. Try another channel with CH + or CH −.`,
     error: `We couldn’t load ${cur.name}. The broadcaster’s stream may be down. Try again later or switch channel.`,
   };
@@ -239,6 +344,7 @@ export function Player({ channels, initialSlug, market }: Props) {
           {cur.short}
         </div>
         <div className={s.placeholderNote}>HLS live stream · {cur.name}</div>
+        {status === "loading" && <TuningIn key={cur.slug} channel={cur.name} />}
         {statusText[status] && (
           <p className={s.status} role="status">
             {statusText[status]}
@@ -252,16 +358,32 @@ export function Player({ channels, initialSlug, market }: Props) {
         playsInline
         autoPlay
         aria-label={`${cur.name} live stream`}
-        style={{ visibility: status === "playing" || status === "blocked" ? "visible" : "hidden" }}
+        style={{
+          visibility:
+            status === "playing" || status === "blocked" ? "visible" : "hidden",
+        }}
       />
 
-      <div ref={overlayRef} className={`${s.overlay} ${overlay ? "" : s.hidden}`}>
+      <div
+        ref={overlayRef}
+        className={`${s.overlay} ${overlay ? "" : s.hidden}`}
+      >
         <div className={s.top}>
-          <Link href={marketPath(market)} className={s.back} data-nav="" data-home="">
+          <Link
+            href={marketPath(market)}
+            className={s.back}
+            data-nav=""
+            data-home=""
+          >
             <span aria-hidden="true">←</span> Back
           </Link>
           {status === "blocked" && (
-            <button type="button" className={s.btn} onClick={unmute} data-nav="">
+            <button
+              type="button"
+              className={s.btn}
+              onClick={unmute}
+              data-nav=""
+            >
               🔇 Unmute
             </button>
           )}
@@ -288,7 +410,17 @@ export function Player({ channels, initialSlug, market }: Props) {
 
         <div className={s.bottom}>
           <div className={s.mark} aria-hidden="true">
-            {cur.logoUrl ? <ChannelLogo key={cur.logoUrl} src={cur.logoUrl} sizes="12em" eager className={s.markTile} /> : cur.short}
+            {cur.logoUrl ? (
+              <ChannelLogo
+                key={cur.logoUrl}
+                src={cur.logoUrl}
+                sizes="12em"
+                eager
+                className={s.markTile}
+              />
+            ) : (
+              cur.short
+            )}
           </div>
           <div className={s.info}>
             <div className={s.infoMeta}>
@@ -311,10 +443,22 @@ export function Player({ channels, initialSlug, market }: Props) {
             >
               CH +
             </button>
-            <button type="button" className={s.btn} onClick={() => zap(-1)} aria-label={`Channel down: ${down.name}`} data-nav="">
+            <button
+              type="button"
+              className={s.btn}
+              onClick={() => zap(-1)}
+              aria-label={`Channel down: ${down.name}`}
+              data-nav=""
+            >
               CH −
             </button>
-            <button type="button" className={s.btn} onClick={toggleFav} aria-pressed={isFav} data-nav="">
+            <button
+              type="button"
+              className={s.btn}
+              onClick={toggleFav}
+              aria-pressed={isFav}
+              data-nav=""
+            >
               {isFav ? "★ Saved" : "☆ Save"}
             </button>
           </div>
