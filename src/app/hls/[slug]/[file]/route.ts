@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getCatalog } from "@/lib/data/catalog";
-import { hlsProxyPath, isPlaylistUrl, rewritePlaylist } from "@/lib/hls";
+import { hlsProxyPath, rewritePlaylist } from "@/lib/hls";
+import { signPlaylistUrl, verifyPlaylistUrl } from "@/lib/hls-sign";
 
 /**
  * Same-origin proxy for HLS *playlists* only (segments are fetched straight from the broadcaster).
@@ -9,7 +10,8 @@ import { hlsProxyPath, isPlaylistUrl, rewritePlaylist } from "@/lib/hls";
  * (ERR_CONTENT_DECODING_FAILED behind certain proxies/antivirus), and some send no CORS header.
  * Fetching the playlist here uncompressed and serving it from our origin sidesteps both.
  *
- * Not an open proxy: only `.m3u8` URLs on the same origin as a published channel's stream URL.
+ * Not an open proxy: it fetches a published channel's stream URL, plus nested playlist URLs that it
+ * signed itself while rewriting that channel's playlists (HMAC over slug + URL).
  */
 
 const MAX_PLAYLIST_BYTES = 1024 * 1024;
@@ -34,7 +36,9 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/hls/[slug]/[
     } catch {
       return error(400, "Bad playlist URL");
     }
-    if (target.origin !== master.origin || !isPlaylistUrl(target)) return error(400, "Playlist not allowed");
+    if (!/^https?:$/.test(target.protocol) || !verifyPlaylistUrl(slug, u, request.nextUrl.searchParams.get("s"))) {
+      return error(403, "Playlist not allowed");
+    }
   }
 
   let upstream: Response;
@@ -53,7 +57,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/hls/[slug]/[
   const text = await upstream.text();
   if (text.length > MAX_PLAYLIST_BYTES || !text.trimStart().startsWith("#EXTM3U")) return error(502, "Upstream is not an HLS playlist");
 
-  const body = rewritePlaylist(text, upstream.url || target.toString(), (abs) => hlsProxyPath(slug, abs));
+  const body = rewritePlaylist(text, upstream.url || target.toString(), (abs) => hlsProxyPath(slug, abs, signPlaylistUrl(slug, abs)));
   const isMaster = text.includes("#EXT-X-STREAM-INF");
 
   return new Response(body, {

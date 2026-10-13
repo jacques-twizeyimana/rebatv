@@ -44,9 +44,14 @@ export function rewritePlaylist(text: string, baseUrl: string, proxy: (absolute:
     .join("\n");
 }
 
-/** Path of a proxied playlist. The master playlist has no `u`; nested ones carry their upstream URL. */
-export function hlsProxyPath(slug: string, upstream?: string): string {
+/**
+ * Path of a proxied playlist. The master playlist has no `u`; nested ones carry their upstream URL
+ * and the proxy's signature for it (see src/lib/hls-sign.ts).
+ */
+export function hlsProxyPath(slug: string, upstream?: string, sig?: string): string {
   if (!upstream) return `/hls/${slug}/playlist.m3u8`;
-  const name = new URL(upstream).pathname.split("/").pop() || "playlist.m3u8";
-  return `/hls/${slug}/${encodeURIComponent(name)}?u=${encodeURIComponent(upstream)}`;
+  let name = new URL(upstream).pathname.split("/").pop() || "playlist";
+  if (!/\.m3u8$/i.test(name)) name += ".m3u8";
+  const query = `u=${encodeURIComponent(upstream)}${sig ? `&s=${sig}` : ""}`;
+  return `/hls/${slug}/${encodeURIComponent(name)}?${query}`;
 }
