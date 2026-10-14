@@ -1,7 +1,9 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "reba-tv (prod)", "runtimeExecutable": "pnpm", "runtimeArgs": ["start"], "port": 3000 },
-    { "name": "reba-tv (dev)", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 3000 }
+    { "name": "rebatv-web (prod)", "runtimeExecutable": "pnpm", "runtimeArgs": ["--dir", "rebatv-web", "start"], "port": 3000 },
+    { "name": "rebatv-web (dev)", "runtimeExecutable": "pnpm", "runtimeArgs": ["--dir", "rebatv-web", "dev"], "port": 3000 },
+    { "name": "rebatv-webos (dev)", "runtimeExecutable": "pnpm", "runtimeArgs": ["--dir", "rebatv-webos", "dev"], "port": 5173 },
+    { "name": "rebatv-webos (preview build)", "runtimeExecutable": "pnpm", "runtimeArgs": ["--dir", "rebatv-webos", "preview", "--port", "4173"], "port": 4173 }
   ]
 }

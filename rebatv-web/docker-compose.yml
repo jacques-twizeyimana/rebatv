@@ -1,3 +1,7 @@
+# Fixed project name: keeps the same container and data volume (reba-tv_mariadb-data) as before
+# the app moved into rebatv-web/.
+name: reba-tv
+
 services:
   mariadb:
     image: mariadb:11.4

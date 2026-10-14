@@ -8,9 +8,11 @@
 #   deploy.sh --list             list releases
 #
 # Layout under APP_ROOT (default /srv/rebatv):
-#   repo/          git clone; builds run here, so node_modules and .next/cache stay warm
+#   repo/          git clone; builds run here (rebatv-web/ and rebatv-webos/), so node_modules and
+#                  .next/cache stay warm
 #   shared/.env    production environment: DATABASE_URL, SESSION_SECRET, NEXT_PUBLIC_SITE_URL, …
-#   releases/<UTC timestamp>-<short sha>/   self-contained `next build` standalone output
+#   releases/<UTC timestamp>-<short sha>/   self-contained `next build` standalone output, with
+#                  the hosted TV app (rebatv-webos, for VIDAA) in public/tv/
 #   current -> releases/<id>     systemd runs `node server.js` in here (deploy/rebatv.service)
 #
 # Only the KEEP_RELEASES newest releases are kept: the live one plus 2 to roll back to.
@@ -101,8 +103,8 @@ rollback() {
 
 # Stage 2: build the commit that's checked out in $REPO and release it.
 build_and_release() {
-  local id dest previous
-  cd "$REPO"
+  local id dest previous web=$REPO/rebatv-web tv=$REPO/rebatv-webos
+  cd "$web"
   [[ -f $ENV_FILE ]] || die "missing $ENV_FILE"
 
   # next build prerenders pages from the database, so it needs the production environment.
@@ -125,6 +127,10 @@ build_and_release() {
   pnpm db:migrate
   pnpm build
 
+  # The TV app's hosted build (VIDAA TVs load https://<site>/tv/index.html); same origin as the API.
+  log "Building the TV app"
+  (cd "$tv" && pnpm install --frozen-lockfile && pnpm build)
+
   [[ -f .next/standalone/server.js ]] || die "no standalone output (is output: \"standalone\" set in next.config.ts?)"
   log "Assembling release $id"
   mkdir -p "$dest/.next"
@@ -132,6 +138,8 @@ build_and_release() {
   cp -a .next/standalone/. "$dest/"
   cp -a .next/static "$dest/.next/static"
   if [[ -d public ]]; then cp -a public "$dest/public"; fi
+  mkdir -p "$dest/public/tv"
+  cp -a "$tv/dist/." "$dest/public/tv/"
   git rev-parse HEAD >"$dest/REVISION"
   trap - ERR
 
@@ -181,7 +189,8 @@ case "${1:-}" in
     log "Fetching $ref"
     git fetch --prune --tags origin
     git checkout --force --detach "$ref"
-    # Drop stray files but keep dependencies and Next's build cache warm.
+    # Drop stray files but keep dependencies and Next's build cache warm (patterns match in
+    # rebatv-web/ and rebatv-webos/ too).
     git clean -ffdx -e node_modules -e .next
     exec "$REPO/deploy/deploy.sh" --build
     ;;

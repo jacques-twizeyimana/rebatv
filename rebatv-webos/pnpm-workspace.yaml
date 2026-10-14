@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - sharp
+ignoredBuiltDependencies:
+  - "@webos-tools/cli"
+  - core-js
+  - cpu-features
+  - ssh2

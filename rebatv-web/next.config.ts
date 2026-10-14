@@ -38,7 +38,13 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/sandberg/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Cache-Control", value: "no-store" }] },
+      // Read-only JSON for the TV apps; a packaged webOS app runs from file:// (origin "null").
+      { source: "/api/v1/:path*", headers: [{ key: "Access-Control-Allow-Origin", value: "*" }] },
     ];
+  },
+  async redirects() {
+    // The hosted TV app (rebatv-webos, copied into public/tv by deploy/deploy.sh) for VIDAA TVs.
+    return [{ source: "/tv", destination: "/tv/index.html", permanent: false }];
   },
 };
 

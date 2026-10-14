@@ -16,20 +16,26 @@ permissions:
   contents: read
 
 jobs:
-  checks:
-    name: Lint, typecheck, test
+  web:
+    name: Web · lint, typecheck, test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rebatv-web
     steps:
       - uses: actions/checkout@v5
 
       # Version comes from "packageManager" in package.json.
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: rebatv-web/package.json
 
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: rebatv-web/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
@@ -38,3 +44,28 @@ jobs:
 
       # No `pnpm build` here: the build prerenders pages from the production database, which is
       # only reachable on the VPS, so deploy.sh builds there.
+
+  webos:
+    name: TV app · typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rebatv-webos
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: rebatv-webos/package.json
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: rebatv-webos/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      # Typechecks, builds, and checks the bundle is ES2016 (Chromium 53, webOS 4).
+      - run: pnpm build

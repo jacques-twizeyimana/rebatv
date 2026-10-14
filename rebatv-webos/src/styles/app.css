@@ -1,0 +1,1294 @@
+/* rebaTV for TVs. A port of rebatv-web's design (globals.css, tv/player/search modules) restricted
+   to CSS that Chromium 53 (webOS 4, 2018) understands: flexbox with margins instead of `gap`, no
+   grid, no aspect-ratio, :has(), :focus-visible, nesting or sticky positioning.
+   The layout is fixed to a 1920×1080 design scaled from the viewport width: 1em = 16px at 1920. */
+
+:root {
+  --bg: #0e0f0d;
+  --bg-raised: #151713;
+  --surface: #1b1d19;
+  --surface-hover: #262922;
+  --surface-strong: #22251f;
+  --border: #2c2f28;
+  --fg: #f3f1ea;
+  --fg-soft: #d9d7ce;
+  --muted: #a7a79c;
+  --hint: #8f9187;
+  --ink: #12130f;
+  --live: #d42a25;
+  --acc: #fad201;
+  --font-body: "Figtree", "LG Smart UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Bricolage Grotesque", "Figtree", Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 0.8333vw;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+h1,
+h2,
+h3,
+p,
+ul {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+:focus {
+  outline: none;
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.spacer {
+  -webkit-box-flex: 1;
+  flex: 1;
+}
+
+.gutter {
+  padding-left: 4em;
+  padding-right: 4em;
+}
+
+/* ───── Screens ─────────────────────────────────────────────────────────── */
+.app,
+.layer,
+.screen {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.page {
+  position: relative;
+  padding-bottom: 4em;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+
+.splash {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash .logo {
+  font-size: 5em;
+  margin-bottom: 0.6em;
+}
+
+.splashError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 1.4em;
+  color: var(--fg-soft);
+  text-align: center;
+}
+
+.splashError p {
+  max-width: 28em;
+  margin-bottom: 1.4em;
+  line-height: 1.45;
+}
+
+.spinner {
+  width: 3em;
+  height: 3em;
+  border: 0.18em solid var(--fg-soft);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ───── Shared controls ─────────────────────────────────────────────────── */
+.pill,
+.locButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7em 1.4em;
+  border: 0;
+  border-radius: 2em;
+  background: transparent;
+  color: var(--fg-soft);
+  font-weight: 600;
+  font-size: 1.1em;
+  line-height: 1.2;
+  cursor: pointer;
+  outline: 0.18em solid transparent;
+  outline-offset: 0.15em;
+  transition: background-color 0.15s, color 0.15s, outline-color 0.15s;
+}
+
+.pill > * + *,
+.locButton > * + * {
+  margin-left: 0.6em;
+}
+
+.pill:focus,
+.locButton:focus {
+  outline-color: var(--acc);
+  background: var(--surface-hover);
+  color: var(--fg);
+}
+
+.searchGlyph {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  border: 0.16em solid currentColor;
+  border-radius: 50%;
+}
+
+.locButton {
+  padding: 0.6em 1.2em 0.6em 0.9em;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.pin {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--acc);
+}
+
+.locName {
+  font-weight: 600;
+}
+
+.locChange {
+  color: var(--muted);
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.95em 1.9em;
+  border: 0;
+  border-radius: 0.8em;
+  background: var(--acc);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1.25em;
+  cursor: pointer;
+  outline: 0.2em solid transparent;
+  outline-offset: 0.2em;
+  transition: transform 0.15s, outline-color 0.15s, background-color 0.15s;
+}
+
+.cta > * + * {
+  margin-left: 0.7em;
+}
+
+.cta:focus {
+  outline-color: var(--fg);
+  transform: scale(1.05);
+}
+
+.ctaGhost {
+  background: rgba(243, 241, 234, 0.12);
+  color: var(--fg);
+  font-weight: 600;
+  padding: 0.95em 1.7em;
+}
+
+.ctaGhost:focus {
+  outline-color: var(--acc);
+  background: rgba(243, 241, 234, 0.22);
+}
+
+.playGlyph {
+  width: 0;
+  height: 0;
+  border-left: 0.75em solid currentColor;
+  border-top: 0.45em solid transparent;
+  border-bottom: 0.45em solid transparent;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3em 0.7em;
+  border-radius: 0.4em;
+  background: var(--live);
+  color: #fff;
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.liveDot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.45em;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.clock,
+.playerClock {
+  min-width: 3.2em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.5em;
+  color: var(--fg-soft);
+  text-align: right;
+}
+
+/* ───── Header ─────────────────────────────────────────────────────────── */
+.header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 2em 4em;
+}
+
+.header > * + * {
+  margin-left: 1.6em;
+}
+
+.header > .spacer + * {
+  margin-left: 0;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.1em;
+  letter-spacing: -0.04em;
+  color: var(--fg);
+}
+
+.logoAccent {
+  color: var(--acc);
+}
+
+/* ───── Hero ───────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 30em;
+  margin: 0 4em;
+  border-radius: 1.6em;
+  overflow: hidden;
+  background: var(--bg-raised);
+}
+
+.heroWash {
+  opacity: 0.55;
+}
+
+.heroFade {
+  background: linear-gradient(90deg, #0e0f0d 15%, rgba(14, 15, 13, 0.6) 50%, rgba(14, 15, 13, 0) 85%);
+}
+
+.heroCopy {
+  position: relative;
+  -webkit-box-flex: 1;
+  flex: 1 1 30em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3em 3.4em;
+}
+
+.heroCopy > * + * {
+  margin-top: 1.2em;
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.heroMetaText {
+  margin-left: 0.8em;
+  color: var(--muted);
+}
+
+.heroTitle {
+  max-width: 11em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 4.6em;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+
+.heroDesc {
+  max-width: 28em;
+  font-size: 1.3em;
+  line-height: 1.45;
+  color: var(--fg-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.heroActions {
+  display: flex;
+  padding-top: 0.6em;
+}
+
+.heroActions > * + * {
+  margin-left: 1em;
+}
+
+.heroMedia {
+  position: relative;
+  flex: 0 0 40em;
+  display: flex;
+  align-items: center;
+  padding: 3em 3em 3em 0;
+}
+
+.heroScreen {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: 1em;
+  overflow: hidden;
+  box-shadow: 0 2em 4em rgba(0, 0, 0, 0.5);
+}
+
+.heroScreenMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 5em;
+  color: rgba(255, 255, 255, 0.12);
+  letter-spacing: -0.04em;
+}
+
+/* ───── Gradient "screens" (per-channel hue) ────────────────────────────── */
+.gradient {
+  background: radial-gradient(120% 90% at 18% 12%, hsl(var(--h), 72%, 46%) 0%, transparent 55%),
+    radial-gradient(90% 80% at 88% 92%, hsl(var(--h2), 60%, 32%) 0%, transparent 60%),
+    linear-gradient(160deg, hsl(var(--h), 42%, 20%), hsl(var(--h3), 38%, 8%));
+}
+
+.scanlines {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0, rgba(0, 0, 0, 0.12) 2px, transparent 2px, transparent 4px);
+}
+
+/* ───── Rows & cards ───────────────────────────────────────────────────── */
+.row {
+  padding-top: 2.4em;
+}
+
+.rowHead {
+  display: flex;
+  align-items: baseline;
+}
+
+.rowTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2em;
+  letter-spacing: -0.02em;
+}
+
+.rowSub {
+  margin-left: 1em;
+  color: var(--muted);
+  font-size: 1.1em;
+}
+
+/* The viewport clips; the track slides (nav.ts). Vertical padding leaves room for the focus
+   outline and the scale-up of the focused card. */
+.rowViewport {
+  overflow: hidden;
+}
+
+.rowTrack {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  padding: 1.4em 4em 1.2em;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+
+.rowItem {
+  flex: 0 0 auto;
+  width: 20.4em;
+  margin-right: 1.5em;
+}
+
+.card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 1em;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  outline: 0.22em solid transparent;
+  outline-offset: 0.35em;
+  transition: transform 0.18s, outline-color 0.18s;
+}
+
+.card:focus {
+  outline-color: var(--acc);
+  transform: scale(1.05);
+}
+
+.thumb {
+  position: relative;
+  padding-top: 56.25%;
+  border-radius: 1em;
+  overflow: hidden;
+}
+
+.thumbLogo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoTile {
+  position: relative;
+  display: block;
+  width: 58%;
+  height: 64%;
+  border-radius: 0.7em;
+  background: #fff;
+  box-shadow: 0 0.4em 1.2em rgba(0, 0, 0, 0.35);
+}
+
+.logoBox {
+  position: absolute;
+  top: 9%;
+  right: 9%;
+  bottom: 9%;
+  left: 9%;
+}
+
+.logoImg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.badge {
+  position: absolute;
+  left: 0.9em;
+  top: 0.9em;
+  padding: 0.35em 0.6em;
+  border-radius: 0.4em;
+  background: rgba(14, 15, 13, 0.82);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15em;
+  letter-spacing: -0.02em;
+}
+
+.cardLive {
+  position: absolute;
+  right: 0.9em;
+  top: 0.9em;
+  display: flex;
+  align-items: center;
+  padding: 0.25em 0.55em;
+  border-radius: 0.35em;
+  background: var(--live);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+}
+
+.cardLive .liveDot {
+  width: 0.45em;
+  height: 0.45em;
+  margin-right: 0.35em;
+}
+
+.chNum {
+  position: absolute;
+  right: 0.9em;
+  bottom: 0.8em;
+  font-weight: 700;
+  font-size: 0.95em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+  padding: 0.85em 0.2em 0;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: 1.15em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardTag {
+  margin-top: 0.3em;
+  color: var(--muted);
+  font-size: 0.95em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ───── Footer ─────────────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  padding: 2.4em 4em 3em;
+  color: var(--muted);
+  font-size: 1.05em;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  margin-right: 2em;
+}
+
+.key {
+  margin-right: 0.6em;
+  padding: 0.1em 0.5em;
+  border: 0.1em solid #55574f;
+  border-radius: 0.35em;
+  color: var(--fg-soft);
+}
+
+/* ───── Dialogs & settings ─────────────────────────────────────────────── */
+.modalBackdrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 9, 7, 0.82);
+}
+
+.dialog {
+  width: 36em;
+  padding: 2.6em;
+  border-radius: 1.4em;
+  background: #181a17;
+  box-shadow: 0 2em 5em rgba(0, 0, 0, 0.6);
+}
+
+.dialogTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.2em;
+  letter-spacing: -0.02em;
+}
+
+.dialogActions {
+  display: flex;
+  margin-top: 1.6em;
+}
+
+.dialogActions > * + * {
+  margin-left: 1em;
+}
+
+.dialogText {
+  max-width: 40em;
+  margin-top: 0.6em;
+  color: var(--muted);
+  font-size: 1.2em;
+  line-height: 1.45;
+}
+
+.settings {
+  padding-top: 1em;
+}
+
+.options {
+  width: 40em;
+  margin-top: 2em;
+}
+
+.options > li + li {
+  margin-top: 0.6em;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 1em 1.4em;
+  border: 0;
+  border-radius: 0.8em;
+  background: var(--surface-strong);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  outline: 0.18em solid transparent;
+  transition: background-color 0.12s, outline-color 0.12s;
+}
+
+.option:focus {
+  outline-color: var(--acc);
+  background: var(--border);
+}
+
+.optionName {
+  font-weight: 700;
+  font-size: 1.3em;
+}
+
+.optionCount {
+  margin-left: 1em;
+  color: var(--muted);
+  font-size: 1.05em;
+}
+
+.optionMark {
+  margin-left: auto;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.about {
+  margin-top: 3em;
+  color: var(--hint);
+  font-size: 1em;
+}
+
+/* ───── Number entry ───────────────────────────────────────────────────── */
+.numberEntry {
+  position: absolute;
+  top: 2em;
+  right: 4em;
+  z-index: 90;
+  padding: 0.4em 0.8em;
+  border-radius: 0.4em;
+  background: rgba(14, 15, 13, 0.9);
+  border: 0.06em solid var(--acc);
+  color: var(--acc);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 3.4em;
+  letter-spacing: 0.02em;
+}
+
+.numberEntry.notice {
+  color: var(--fg);
+  border-color: var(--border);
+  font-size: 2em;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.9em;
+  margin-left: 0.08em;
+  vertical-align: -0.1em;
+  background: currentColor;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ───── Search ─────────────────────────────────────────────────────────── */
+.searchLayout {
+  position: absolute;
+  top: 7em;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  padding: 1em 4em 0;
+}
+
+.searchPanel {
+  flex: 0 0 34em;
+  margin-right: 3.4em;
+}
+
+.searchPanel > * + * {
+  margin-top: 1.4em;
+}
+
+.queryBox {
+  display: flex;
+  align-items: center;
+  padding: 0 0.6em;
+  border: 0.12em solid var(--border);
+  border-radius: 0.9em;
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.9em;
+  height: 2.2em;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--acc);
+}
+
+.queryBox.empty {
+  color: var(--hint);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.4em;
+  height: 3em;
+  letter-spacing: 0;
+}
+
+.queryBox.empty .caret {
+  display: none;
+}
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -0.55em;
+  margin-bottom: -0.55em;
+}
+
+/* 6 keys per row in the 34em panel (sizes in the key's own 1.4em font). */
+.key {
+  width: 3.66em;
+  height: 3em;
+  margin: 0 0.39em 0.39em 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.43em;
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 1.4em;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: 0;
+  transition: background-color 0.12s, color 0.12s, transform 0.12s;
+}
+
+.keyActions {
+  display: flex;
+}
+
+.action {
+  flex: 2 1 0;
+  height: 2.8em;
+  margin-right: 0.39em;
+  border: 0;
+  border-radius: 0.43em;
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 1.15em;
+  cursor: pointer;
+  outline: 0;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.action:last-child {
+  margin-right: 0;
+}
+
+.action.wide {
+  flex-grow: 3;
+}
+
+.key:focus,
+.action:focus {
+  background: var(--acc);
+  color: var(--ink);
+  transform: scale(1.08);
+}
+
+.action:focus {
+  transform: none;
+}
+
+.browseLabel {
+  display: block;
+  margin-bottom: 0.8em;
+  color: var(--muted);
+  font-size: 1.05em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.chip {
+  margin: 0 0.6em 0.6em 0;
+  padding: 0.6em 1.15em;
+  border: 0;
+  border-radius: 2em;
+  background: var(--surface);
+  color: var(--fg-soft);
+  font-weight: 600;
+  font-size: 1.05em;
+  cursor: pointer;
+  outline: 0.16em solid transparent;
+  outline-offset: 0.12em;
+  transition: background-color 0.12s, outline-color 0.12s;
+}
+
+.chip:focus {
+  outline-color: var(--acc);
+}
+
+.chip.on {
+  background: var(--fg);
+  color: var(--ink);
+}
+
+.results {
+  -webkit-box-flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.resultsHead {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 0.6em;
+}
+
+.resultsTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2em;
+  letter-spacing: -0.02em;
+}
+
+.resultsCount {
+  margin-left: 1em;
+  color: var(--muted);
+  font-size: 1.1em;
+}
+
+.emptyNote {
+  padding: 3em;
+  border-radius: 1em;
+  background: var(--bg-raised);
+  color: var(--fg-soft);
+  font-size: 1.25em;
+  line-height: 1.5;
+}
+
+.resultsViewport {
+  position: relative;
+  -webkit-box-flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0 -1em;
+}
+
+.resultsGrid {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.8em 1em 2em;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+
+.resultsItem {
+  width: 23.5%;
+  margin: 0 2% 2em 0;
+}
+
+.resultsItem:nth-child(4n) {
+  margin-right: 0;
+}
+
+/* ───── Player ─────────────────────────────────────────────────────────── */
+.player {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  overflow: hidden;
+  background: #000;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2em;
+  text-align: center;
+}
+
+.placeholderMark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 9em;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.13);
+}
+
+.placeholderNote {
+  margin-top: 0.4em;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.3em;
+}
+
+.status {
+  max-width: 30em;
+  margin-top: 1.4em;
+  padding: 1em 1.4em;
+  border-radius: 0.8em;
+  background: rgba(14, 15, 13, 0.75);
+  color: var(--fg-soft);
+  font-size: 1.3em;
+  line-height: 1.45;
+}
+
+.tuning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.4em;
+  color: var(--fg-soft);
+  font-size: 1.3em;
+}
+
+.tuning .spinner {
+  width: 2.2em;
+  height: 2.2em;
+  margin-bottom: 0.9em;
+}
+
+.tuningWord {
+  animation: wordIn 0.3s ease-out;
+}
+
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+
+.overlay {
+  transition: opacity 0.4s;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  cursor: none;
+}
+
+.playerTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 2.4em 4em 6em;
+  background: linear-gradient(rgba(0, 0, 0, 0.75), transparent);
+}
+
+.playerTop > * + * {
+  margin-left: 1.4em;
+}
+
+.playerClock {
+  margin-left: auto !important;
+  color: var(--fg);
+}
+
+.pausedNote {
+  color: var(--fg-soft);
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.8em 1.3em;
+  border: 0;
+  border-radius: 0.7em;
+  background: rgba(243, 241, 234, 0.14);
+  color: var(--fg);
+  font-weight: 700;
+  font-size: 1.1em;
+  cursor: pointer;
+  outline: 0.18em solid transparent;
+  outline-offset: 0.15em;
+  transition: background-color 0.15s, outline-color 0.15s;
+}
+
+.btn:focus {
+  outline-color: var(--acc);
+  background: rgba(243, 241, 234, 0.26);
+}
+
+.back {
+  padding: 0.7em 1.3em;
+  border-radius: 2em;
+  font-weight: 600;
+}
+
+.strip {
+  position: absolute;
+  right: 4em;
+  top: 50%;
+  width: 19em;
+  transform: translateY(-50%);
+}
+
+.strip > li + li {
+  margin-top: 0.7em;
+}
+
+.stripItem {
+  display: flex;
+  align-items: center;
+  padding: 0.8em 1em;
+  border-radius: 0.8em;
+  background: rgba(14, 15, 13, 0.55);
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.stripNum {
+  flex: none;
+  width: 3.3em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.stripName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.stripCurrent {
+  padding: 1em;
+  background: var(--acc);
+  color: var(--ink);
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.stripCurrent .stripNum {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.stripCurrent .stripName {
+  font-weight: 700;
+}
+
+.stripHint {
+  margin-top: 1.1em !important;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95em;
+}
+
+.playerBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 7em 4em 3em;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.88));
+}
+
+.mark {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6.5em;
+  height: 6.5em;
+  margin-right: 1.7em;
+  border-radius: 1em;
+  background: var(--bg);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.4em;
+  overflow: hidden;
+}
+
+.markTile {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.info {
+  -webkit-box-flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 2.4em;
+}
+
+.infoMeta {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.infoMeta > * + * {
+  margin-left: 0.8em;
+}
+
+.title {
+  margin-top: 0.2em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 3.2em;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  margin-top: 0.4em;
+  color: var(--fg-soft);
+  font-size: 1.2em;
+}
+
+.controls {
+  display: flex;
+  flex: none;
+}
+
+.controls > * + * {
+  margin-left: 0.7em;
+}
